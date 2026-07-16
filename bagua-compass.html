@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>罗盘 · 方位设置</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lacquer:#15110c;
+    --lacquer-2:#1d1710;
+    --panel:#211a12;
+    --brass:#c6a15b;
+    --brass-dim:#8c7440;
+    --cinnabar:#9b2b26;
+    --cinnabar-bright:#c94a3d;
+    --ink:#2a2316;
+    --cream:#ede0c8;
+    --cream-dim:#a89a7c;
+    --ok-green:#5a7a54;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    background:
+      radial-gradient(ellipse at 50% -10%, #2a2115 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 110%, #0f0c08 0%, transparent 55%),
+      var(--lacquer);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    min-height:100%;
+    display:flex;
+    justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{
+    width:100%;
+    max-width:460px;
+    padding:28px 20px 40px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+  header{ text-align:center; }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--brass-dim);
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Noto Serif SC',serif;
+    font-weight:700;
+    font-size:28px;
+    margin:0;
+    letter-spacing:.06em;
+    color:var(--brass);
+    text-shadow:0 1px 0 rgba(0,0,0,.5);
+  }
+  .subtitle{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:14px;
+    color:var(--cream-dim);
+    margin-top:6px;
+  }
+
+  .dial-wrap{
+    position:relative;
+    width:min(84vw,340px);
+    aspect-ratio:1/1;
+    filter:drop-shadow(0 18px 30px rgba(0,0,0,.55));
+  }
+  .dial-wrap svg{ width:100%; height:100%; display:block; touch-action:manipulation; }
+  #dialGroup{ transform-origin:200px 200px; transition:transform .35s cubic-bezier(.22,.61,.36,1); }
+  .segment{ cursor:pointer; transition:fill .25s ease, opacity .2s ease; }
+  .segment:active{ opacity:.85; }
+  .seg-label{
+    font-family:'Noto Serif SC',serif;
+    font-weight:600;
+    fill:var(--cream);
+    pointer-events:none;
+    user-select:none;
+  }
+  .seg-label.selected{ fill:#2a1210; }
+  .rivet{ fill:var(--brass-dim); }
+  .ring{ fill:none; stroke:var(--brass-dim); stroke-opacity:.5; }
+  .tick{ stroke:var(--brass-dim); stroke-opacity:.6; }
+
+  .fixed-pointer{ position:absolute; inset:0; pointer-events:none; }
+
+  .hint{
+    font-size:13px;
+    color:var(--cream-dim);
+    text-align:center;
+    min-height:18px;
+    line-height:1.5;
+  }
+  .hint b{ color:var(--brass); font-weight:600; }
+
+  .status-card{
+    width:100%;
+    background:var(--panel);
+    border:1px solid rgba(198,161,91,.25);
+    border-radius:14px;
+    padding:16px 18px;
+    text-align:center;
+    transition:border-color .3s ease, background .3s ease;
+  }
+  .status-card.alert{
+    border-color:var(--cinnabar-bright);
+    background:linear-gradient(180deg, rgba(155,43,38,.18), var(--panel));
+  }
+  .status-heading{
+    font-family:'Noto Serif SC',serif;
+    font-size:22px;
+    font-weight:700;
+    color:var(--brass);
+  }
+  .status-heading .deg{
+    font-family:'Cormorant Garamond',serif;
+    font-size:15px;
+    color:var(--cream-dim);
+    margin-left:8px;
+  }
+  .status-sub{
+    font-size:12.5px;
+    color:var(--cream-dim);
+    margin-top:4px;
+    letter-spacing:.02em;
+  }
+  .status-sub.alert-text{ color:var(--cinnabar-bright); font-weight:600; }
+
+  .selected-list{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .chip{
+    font-family:'Noto Serif SC',serif;
+    font-size:13px;
+    padding:5px 12px;
+    border-radius:999px;
+    border:1px solid var(--brass-dim);
+    color:var(--cream-dim);
+  }
+  .chip.on{
+    background:var(--cinnabar);
+    border-color:var(--cinnabar-bright);
+    color:var(--cream);
+  }
+
+  .btn-row{ display:flex; gap:10px; width:100%; }
+  button{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:.02em;
+    border-radius:11px;
+    padding:13px 16px;
+    border:1px solid var(--brass-dim);
+    background:transparent;
+    color:var(--brass);
+    cursor:pointer;
+    flex:1;
+    transition:background .2s ease, color .2s ease, opacity .2s ease, transform .05s ease;
+  }
+  button:active{ transform:scale(.98); }
+  button.primary{
+    background:var(--brass);
+    color:var(--ink);
+    border-color:var(--brass);
+  }
+  button.primary:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+  }
+  button.ghost{ color:var(--cream-dim); border-color:rgba(198,161,91,.3); }
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    border:1px solid var(--brass-dim);
+    color:var(--cream);
+    padding:11px 18px;
+    border-radius:10px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    max-width:80vw;
+    text-align:center;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .loading{ padding:60px 0; color:var(--cream-dim); font-size:13px; }
+
+  footer{ font-size:11px; color:var(--brass-dim); letter-spacing:.08em; text-align:center; margin-top:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading" id="loadingView">正在读入方位设置…</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const DIRS = [
+    {id:0, zh:'北',   en:'N',  angle:0},
+    {id:1, zh:'东北', en:'NE', angle:45},
+    {id:2, zh:'东',   en:'E',  angle:90},
+    {id:3, zh:'东南', en:'SE', angle:135},
+    {id:4, zh:'南',   en:'S',  angle:180},
+    {id:5, zh:'西南', en:'SW', angle:225},
+    {id:6, zh:'西',   en:'W',  angle:270},
+    {id:7, zh:'西北', en:'NW', angle:315},
+  ];
+  const STORE_KEY = 'bagua:selected-directions';
+  const app = document.getElementById('app');
+  const toastEl = document.getElementById('toast');
+
+  let mode = 'loading';          // 'loading' | 'setup' | 'main'
+  let selected = new Set();      // direction ids shaded
+  let heading = null;            // current compass heading in degrees, or null if unavailable
+  let sensorActive = false;
+  let storageOK = true;
+
+  // ---------- geometry helpers ----------
+  function polar(cx, cy, r, angleDeg){
+    const rad = angleDeg * Math.PI / 180;
+    return { x: cx + r * Math.sin(rad), y: cy - r * Math.cos(rad) };
+  }
+  function slicePath(cx, cy, rOuter, rInner, startAngle, endAngle){
+    const p1 = polar(cx, cy, rOuter, startAngle);
+    const p2 = polar(cx, cy, rOuter, endAngle);
+    const p3 = polar(cx, cy, rInner, endAngle);
+    const p4 = polar(cx, cy, rInner, startAngle);
+    return `M ${p1.x} ${p1.y} A ${rOuter} ${rOuter} 0 0 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${rInner} ${rInner} 0 0 0 ${p4.x} ${p4.y} Z`;
+  }
+  function norm360(a){ a = a % 360; return a < 0 ? a + 360 : a; }
+  function nearestDirIndex(h){
+    return Math.round(norm360(h) / 45) % 8;
+  }
+
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=> toastEl.classList.remove('show'), 2200);
+  }
+
+  // ---------- storage ----------
+  async function loadSelection(){
+    try{
+      const res = await window.storage.get(STORE_KEY, false);
+      if(res && res.value){
+        const arr = JSON.parse(res.value);
+        if(Array.isArray(arr) && arr.length === 4) return new Set(arr);
+      }
+      return null;
+    }catch(e){
+      return null;
+    }
+  }
+  async function saveSelection(set){
+    try{
+      const ok = await window.storage.set(STORE_KEY, JSON.stringify(Array.from(set)), false);
+      if(!ok) storageOK = false;
+      return !!ok;
+    }catch(e){
+      storageOK = false;
+      return false;
+    }
+  }
+  async function clearSelection(){
+    try{ await window.storage.delete(STORE_KEY, false); }catch(e){}
+  }
+
+  // ---------- SVG dial ----------
+  function buildDialSVG(interactive){
+    const cx=200, cy=200, rOuter=178, rInner=64, rLabel=124;
+    let segs='', labels='', ticks='', rivets='';
+
+    for(const d of DIRS){
+      const start = d.angle - 22.5, end = d.angle + 22.5;
+      const isSel = selected.has(d.id);
+      const fill = isSel ? 'var(--cinnabar)' : 'var(--ink)';
+      segs += `<path class="segment" data-id="${d.id}" d="${slicePath(cx,cy,rOuter,rInner,start,end)}" fill="${fill}" stroke="var(--brass-dim)" stroke-width="1.2"></path>`;
+
+      const lp = polar(cx,cy,rLabel,d.angle);
+      let rot = d.angle;
+      if(rot > 90 && rot < 270) rot -= 180;
+      const cls = isSel ? 'seg-label selected' : 'seg-label';
+      const fsize = d.zh.length > 1 ? 22 : 26;
+      labels += `<text class="${cls}" x="${lp.x}" y="${lp.y}" font-size="${fsize}" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rot} ${lp.x} ${lp.y})">${d.zh}</text>`;
+
+      const rp = polar(cx,cy,rInner-14,d.angle);
+      rivets += `<circle class="rivet" cx="${rp.x}" cy="${rp.y}" r="3"></circle>`;
+    }
+    for(let a=0; a<360; a+=15){
+      const isMajor = a % 45 === 0;
+      const p1 = polar(cx,cy,rOuter, a);
+      const p2 = polar(cx,cy, isMajor ? rOuter-14 : rOuter-7, a);
+      ticks += `<line class="tick" x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke-width="${isMajor?1.6:1}"></line>`;
+    }
+
+    return `
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hub" cx="50%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#e8cf95"/>
+          <stop offset="55%" stop-color="#c6a15b"/>
+          <stop offset="100%" stop-color="#8c7440"/>
+        </radialGradient>
+        <radialGradient id="plate" cx="50%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="#241b12"/>
+          <stop offset="100%" stop-color="#15110c"/>
+        </radialGradient>
+      </defs>
+      <circle cx="200" cy="200" r="192" fill="url(#plate)" stroke="var(--brass-dim)" stroke-width="1.5"></circle>
+      <g id="dialGroup" ${interactive?'':''}>
+        <circle class="ring" cx="200" cy="200" r="${rOuter}" stroke-width="2"></circle>
+        <circle class="ring" cx="200" cy="200" r="${rOuter-2}" stroke-width="1"></circle>
+        ${ticks}
+        ${segs}
+        <circle class="ring" cx="200" cy="200" r="${rInner}" stroke-width="1.5"></circle>
+        ${labels}
+        ${rivets}
+        <circle cx="200" cy="200" r="${rInner-20}" fill="url(#hub)" stroke="var(--brass-dim)" stroke-width="1"></circle>
+      </g>
+    </svg>`;
+  }
+
+  function fixedPointerSVG(){
+    return `
+    <svg viewBox="0 0 400 400" class="fixed-pointer" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 200 14 L 212 42 L 200 34 L 188 42 Z" fill="var(--cinnabar-bright)" stroke="#3a0f0c" stroke-width="1"></path>
+      <line x1="200" y1="42" x2="200" y2="64" stroke="var(--cinnabar-bright)" stroke-width="2"></line>
+    </svg>`;
+  }
+
+  // ---------- render ----------
+  function render(){
+    if(mode === 'loading'){
+      app.innerHTML = `<div class="loading">正在读入方位设置…</div>`;
+      return;
+    }
+
+    const isSetup = mode === 'setup';
+    const selCount = selected.size;
+
+    app.innerHTML = `
+      <header>
+        <p class="eyebrow">${isSetup ? 'Bagua Setup' : 'Bagua Compass'}</p>
+        <h1>${isSetup ? '设置方位' : '八方罗盘'}</h1>
+        <p class="subtitle">${isSetup ? 'Tap four directions to mark' : 'Turn to find your bearing'}</p>
+      </header>
+
+      <div class="dial-wrap" id="dialWrap">
+        ${buildDialSVG(isSetup)}
+        ${isSetup ? '' : fixedPointerSVG()}
+      </div>
+
+      <p class="hint" id="hintText"></p>
+
+      ${isSetup ? `
+        <div class="selected-list" id="chipRow"></div>
+        <div class="btn-row">
+          <button class="primary" id="saveBtn" ${selCount===4?'':'disabled'}>保存设置 · Save</button>
+        </div>
+      ` : `
+        <div class="status-card" id="statusCard">
+          <div class="status-heading" id="statusHeading">— <span class="deg" id="statusDeg"></span></div>
+          <div class="status-sub" id="statusSub">点击「启用指南针」开始感应</div>
+        </div>
+        <div class="selected-list" id="chipRow"></div>
+        <div class="btn-row">
+          <button id="sensorBtn">启用指南针 · Enable</button>
+          <button class="ghost" id="editBtn">重新设置 · Edit</button>
+        </div>
+      `}
+      <footer>八方罗盘 · 四方镇位</footer>
+    `;
+
+    renderChips();
+    updateHint();
+    attachHandlers();
+    if(!isSetup) updateHeadingUI();
+  }
+
+  function renderChips(){
+    const row = document.getElementById('chipRow');
+    if(!row) return;
+    row.innerHTML = DIRS.map(d=>{
+      const on = selected.has(d.id);
+      return `<span class="chip ${on?'on':''}">${d.zh}</span>`;
+    }).join('');
+  }
+
+  function updateHint(){
+    const hint = document.getElementById('hintText');
+    if(!hint) return;
+    if(mode === 'setup'){
+      if(selected.size < 4){
+        hint.innerHTML = `请选择 <b>${4-selected.size}</b> 个方位 · 已选 ${selected.size}/4`;
+      }else{
+        hint.innerHTML = `已选满 <b>4</b> 个方位，可保存设置`;
+      }
+    }else{
+      hint.textContent = '朝红色方位时会特别提示';
+    }
+  }
+
+  function attachHandlers(){
+    document.querySelectorAll('.segment').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        if(mode !== 'setup') return;
+        const id = parseInt(el.dataset.id, 10);
+        if(selected.has(id)){
+          selected.delete(id);
+        }else{
+          if(selected.size >= 4){
+            toast('最多选择四个方位，请先取消其中一个');
+            return;
+          }
+          selected.add(id);
+        }
+        render();
+      });
+    });
+
+    const saveBtn = document.getElementById('saveBtn');
+    if(saveBtn){
+      saveBtn.addEventListener('click', async ()=>{
+        if(selected.size !== 4) return;
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中…';
+        const ok = await saveSelection(selected);
+        if(ok){
+          toast('设置已保存');
+        }else{
+          toast('保存失败，本次设置仅在当前会话中有效');
+        }
+        mode = 'main';
+        render();
+      });
+    }
+
+    const editBtn = document.getElementById('editBtn');
+    if(editBtn){
+      editBtn.addEventListener('click', ()=>{
+        mode = 'setup';
+        render();
+      });
+    }
+
+    const sensorBtn = document.getElementById('sensorBtn');
+    if(sensorBtn){
+      sensorBtn.addEventListener('click', enableSensor);
+    }
+  }
+
+  // ---------- device orientation ----------
+  function handleOrientation(e){
+    let h = null;
+    if(typeof e.webkitCompassHeading === 'number'){
+      h = e.webkitCompassHeading; // iOS: already 0=N, clockwise
+    }else if(e.absolute && typeof e.alpha === 'number'){
+      h = 360 - e.alpha;
+    }else if(typeof e.alpha === 'number'){
+      h = 360 - e.alpha;
+    }
+    if(h === null || isNaN(h)) return;
+    heading = norm360(h);
+    sensorActive = true;
+    updateHeadingUI();
+  }
+
+  async function enableSensor(){
+    const btn = document.getElementById('sensorBtn');
+    try{
+      if(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function'){
+        const perm = await DeviceOrientationEvent.requestPermission();
+        if(perm !== 'granted'){
+          toast('未获得指南针权限，显示静态罗盘');
+          return;
+        }
+      }
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      window.addEventListener('deviceorientation', handleOrientation, true);
+      if(btn) btn.textContent = '指南针已启用';
+      setTimeout(()=>{
+        if(!sensorActive) toast('未检测到指南针感应器，显示静态罗盘');
+      }, 1800);
+    }catch(err){
+      toast('无法启用指南针感应');
+    }
+  }
+
+  function updateHeadingUI(){
+    const dialGroup = document.getElementById('dialGroup');
+    const headingEl = document.getElementById('statusHeading');
+    const degEl = document.getElementById('statusDeg');
+    const subEl = document.getElementById('statusSub');
+    const card = document.getElementById('statusCard');
+    if(!headingEl) return;
+
+    if(heading === null){
+      headingEl.innerHTML = `北 上 <span class="deg">静态罗盘</span>`;
+      subEl.textContent = '点击「启用指南针」开始感应';
+      subEl.classList.remove('alert-text');
+      card.classList.remove('alert');
+      return;
+    }
+
+    if(dialGroup) dialGroup.style.transform = `rotate(${-heading}deg)`;
+
+    const idx = nearestDirIndex(heading);
+    const dir = DIRS[idx];
+    headingEl.innerHTML = `${dir.zh}`;
+    degEl.textContent = `${Math.round(heading)}°`;
+    headingEl.appendChild(degEl);
+
+    if(selected.has(dir.id)){
+      subEl.textContent = `⚠ 当前朝向为您设置的方位：${dir.zh}`;
+      subEl.classList.add('alert-text');
+      card.classList.add('alert');
+    }else{
+      subEl.textContent = '当前朝向不在标记方位内';
+      subEl.classList.remove('alert-text');
+      card.classList.remove('alert');
+    }
+  }
+
+  // ---------- init ----------
+  (async function init(){
+    const saved = await loadSelection();
+    if(saved){
+      selected = saved;
+      mode = 'main';
+    }else{
+      selected = new Set();
+      mode = 'setup';
+    }
+    render();
+  })();
+})();
+</script>
+</body>
+</html>
