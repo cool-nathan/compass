@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>罗盘 · 方位设置 v1.0.0 </title>
+<title>罗盘 · 方位设置 v1.1.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -203,7 +203,7 @@
 
   .loading{ padding:60px 0; color:var(--cream-dim); font-size:13px; }
 
-  footer{ font-size:11px; color:var(--brass-dim); letter-spacing:.08em; text-align:center; margin-top:4px;}
+  footer{ font-size:11px; color:var(--brass-dim); letter-spacing:.08em; text-align:center; margin-top:4px; line-height:1.9; opacity:.85;}
 </style>
 </head>
 <body>
@@ -259,7 +259,7 @@
   }
 
   // ---------- storage ----------
-  // Prefer the Claude.ai artifact storage API when it's available (so
+  // Prefer the artifact storage API when it's available (so
   // settings sync back into this conversation); otherwise fall back to the
   // browser's own localStorage, which always works when the file is opened
   // directly in a regular tab.
@@ -432,7 +432,7 @@
           <button class="ghost" id="editBtn">重新设置 · Edit</button>
         </div>
       `}
-      <footer>八方罗盘 · 四方镇位</footer>
+      <footer>八方罗盘 · 四方镇位<br>© 2026 Cool Nathan. All rights reserved.</footer>
     `;
 
     renderChips();
